@@ -10,6 +10,8 @@ class Board(object):
             size_x += 1
         self.width = size_x
         self.height = size_y
+        self._player1_score = 0
+        self._player2_score = 0
         self._generate_board(self.width, self.height, units_per_side)
 
     def _generate_board(self, width, height, units_per_side):
@@ -100,12 +102,39 @@ class Board(object):
         """
         Let all players fall to a resting point if they're currently floating
         """
-        for y in range(self.height - 2):  # don't need to check bottom row
+        for y in range(self.height):  # don't need to check bottom row
             for x in range(self.width):
                 if (Board._is_player(self._board[y][x]) and
-                        self._board[y + 1][x] == Position.EMPTY):
+                        Board.can_move_down(self._board, x, y)):
                     self._board[y + 1][x] = self._board[y][x]
                     self._board[y][x] = Position.EMPTY
+
+    def _move_player(self, player):
+        if not isinstance(player, Position):
+            raise Exception("Invalid input type for player")
+
+        while not Board.no_moves_left(self, player):
+            for y in range(self.height):
+                for x in range(self.width):
+                    if player == Position.PLAYER1 and Board.can_move_right(self._board, x, y):
+                        self._board[y][x] = Position.EMPTY
+                        # is this a scoring move?
+                        if x + 2 == self.width:
+                            # yes, increase score
+                            self._player1_score += 1
+                        else:
+                            # no, move the player along
+                            self._board[y][x + 1] = Position.PLAYER1
+
+                    if player == Position.PLAYER2 and Board.can_move_left(self._board, x, y):
+                        self._board[y][x] = Position.EMPTY
+                        # is this a scoring move?
+                        if x - 1 == 0:
+                            # yes, increase score
+                            self._player2_score += 1
+                        else:
+                            # no, move the player along
+                            self._board[y][x - 1] = Position.PLAYER2
 
     def print(self):
         """
@@ -118,25 +147,36 @@ class Board(object):
             print('-' * (self.width * 2 - 1))
 
     @staticmethod
-    def no_moves_left(board):
+    def no_moves_left(board, player):
         """
         Check if there are any possible movements a player object can do
         :return:
         """
+        if not isinstance(player, Position):
+            raise Exception("Invalid input type for player")
+
         for y in range(len(board)):  # don't need to check bottom row
             for x in range(len(board[0])):
-                # can player1 move right?
-                if (x + 1 < len(board[0]) and
-                        board[y][x] == Position.PLAYER1 and
-                        board[y][x + 1] == Position.EMPTY):
+                if player == Position.PLAYER1 and Board._is_player(board[y][x]) and Board.can_move_right(board, x, y):
                     return False
-
-                # can player2 move left?
-                if (x - 1 >= 0 and
-                        board[y][x] == Position.PLAYER2 and
-                        board[y][x - 1] == Position.EMPTY):
+                if player == Position.PLAYER2 and Board._is_player(board[y][x]) and Board.can_move_left(board, x, y):
                     return False
         return True
+
+    @staticmethod
+    def can_move_left(board, x, y):
+        return (x - 1 >= 0 and board[y][x - 1] == Position.EMPTY)
+
+    @staticmethod
+    def can_move_right(board, x, y):
+        return (x + 1 < len(board[0]) and board[y][x + 1] == Position.EMPTY)
+
+    @staticmethod
+    def can_move_down(board, x, y):
+        return (y + 1 < len(board) and board[y + 1][x] == Position.EMPTY)
+
+    def score(self):
+        return (self._player1_score, self._player2_score)
 
     @staticmethod
     def _is_player(p):
