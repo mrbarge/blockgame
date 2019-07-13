@@ -43,6 +43,11 @@ class Board(object):
         # let units settle into place
 
     def _find_free_pos(self, right_side=False):
+        """
+        Find a free empty position on a player's side in which to place an object.
+        :param right_side: Look in player2's space instead of player1's.
+        :return:
+        """
         found = False
         player_x_space = int(len(self._board[0]) / 2)
         player_y_space = len(self._board)
@@ -55,10 +60,21 @@ class Board(object):
                 return x, y
 
     def _is_filled_column(self, x):
+        """
+        Check if a column is entirely full of non-empty objects.
+        :param x: index of column (starting at 0)
+        :return: true if column is full
+        """
         filled_cols = [True for y in range(len(self._board)) if self._board[y][x] == Position.FILLED]
         return filled_cols.count(True) == len(self._board)
 
     def _shift_column_down(self, x):
+        """
+        Shift a column downwards.
+        The lower-most element is sent to the top.
+        :param x: index of column (starting at 0)
+        :return:
+        """
         max_y = len(self._board) - 1
         tmp = self._board[max_y][x]
         for y in reversed(range(1, max_y+1)):
@@ -66,6 +82,12 @@ class Board(object):
         self._board[0][x] = tmp
 
     def _shift_column_up(self, x):
+        """
+        Shift a column upwards.
+        The upper-most element is sent to the bottom.
+        :param x: index of column (starting at 0)
+        :return:
+        """
         max_y = len(self._board) - 1
         tmp = self._board[0][x]
         for y in range(max_y):
@@ -73,6 +95,10 @@ class Board(object):
         self._board[max_y][x] = tmp
 
     def print(self):
+        """
+        Print the board state.
+        :return:
+        """
         for y in range(len(self._board)):
             xv = [x.value for x in self._board[y]]
             print('|'.join(xv))
