@@ -8,10 +8,12 @@ class Board(object):
         # Board width can't be even, so increase it by one if it is
         if size_x % 2 == 0:
             size_x += 1
-        self._generate_board(size_x, size_y, units_per_side)
+        self.width = size_x
+        self.height = size_y
+        self._generate_board(self.width, self.height, units_per_side)
 
-    def _generate_board(self, size_x, size_y, units_per_side):
-        self._board = [[Position.EMPTY] * size_x for i in range(size_y)]
+    def _generate_board(self, width, height, units_per_side):
+        self._board = [[Position.EMPTY] * width for i in range(height)]
 
         # populate players
         for i in range(0, units_per_side):
@@ -22,7 +24,7 @@ class Board(object):
 
         # populate blocks fairly, randomized on each side
         # to be fair, each side should have the same quantity, at least 50%
-        max_blocks_per_side = int ((len(self._board) * int(size_x / 2) - units_per_side)/2)
+        max_blocks_per_side = int((len(self._board) * int(self.width / 2) - units_per_side) / 2)
         for i in range(0, max_blocks_per_side):
             lx, ly = self._find_free_pos()
             rx, ry = self._find_free_pos(right_side=True)
@@ -30,12 +32,12 @@ class Board(object):
             self._board[ry][rx] = Position.FILLED
 
         # Now randomly populate the middle column
-        mid = int(size_x / 2)
-        for y in range(0, len(self._board)):
+        mid = int(width / 2)
+        for y in range(0, height):
             self._board[y][mid] = Position.FILLED if random.choice([True, False]) else Position.EMPTY
 
         # a column should not be entirely blocks
-        for x in range(size_x):
+        for x in range(width):
             if self._is_filled_column(x):
                 # just clear out the top position
                 self._board[0][x] = Position.EMPTY
@@ -49,12 +51,12 @@ class Board(object):
         :return:
         """
         found = False
-        player_x_space = int(len(self._board[0]) / 2)
-        player_y_space = len(self._board)
+        player_x_space = int(self.width / 2)
+        player_y_space = self.height
         while not found:
-            x = random.randint(0, player_x_space-1)
+            x = random.randint(0, player_x_space - 1)
             x = len(self._board[0]) - x - 1 if right_side else x
-            y = random.randint(0, player_y_space-1)
+            y = random.randint(0, player_y_space - 1)
 
             if self._board[y][x] == Position.EMPTY:
                 return x, y
@@ -65,8 +67,8 @@ class Board(object):
         :param x: index of column (starting at 0)
         :return: true if column is full
         """
-        filled_cols = [True for y in range(len(self._board)) if self._board[y][x] == Position.FILLED]
-        return filled_cols.count(True) == len(self._board)
+        filled_cols = [True for y in range(self.height) if self._board[y][x] == Position.FILLED]
+        return filled_cols.count(True) == self.height
 
     def _shift_column_down(self, x):
         """
@@ -75,10 +77,10 @@ class Board(object):
         :param x: index of column (starting at 0)
         :return:
         """
-        max_y = len(self._board) - 1
+        max_y = self.height - 1
         tmp = self._board[max_y][x]
-        for y in reversed(range(1, max_y+1)):
-            self._board[y][x] = self._board[y-1][x]
+        for y in reversed(range(1, max_y + 1)):
+            self._board[y][x] = self._board[y - 1][x]
         self._board[0][x] = tmp
 
     def _shift_column_up(self, x):
@@ -88,18 +90,59 @@ class Board(object):
         :param x: index of column (starting at 0)
         :return:
         """
-        max_y = len(self._board) - 1
+        max_y = self.height - 1
         tmp = self._board[0][x]
         for y in range(max_y):
-            self._board[y][x] = self._board[y+1][x]
+            self._board[y][x] = self._board[y + 1][x]
         self._board[max_y][x] = tmp
+
+    def _apply_gravity(self):
+        """
+        Let all players fall to a resting point if they're currently floating
+        """
+        for y in range(self.height - 2):  # don't need to check bottom row
+            for x in range(self.width):
+                if (Board._is_player(self._board[y][x]) and
+                        self._board[y + 1][x] == Position.EMPTY):
+                    self._board[y + 1][x] = self._board[y][x]
+                    self._board[y][x] = Position.EMPTY
 
     def print(self):
         """
         Print the board state.
         :return:
         """
-        for y in range(len(self._board)):
+        for y in range(self.height):
             xv = [x.value for x in self._board[y]]
             print('|'.join(xv))
-            print('-' * (len(self._board[y]) * 2 - 1))
+            print('-' * (self.width * 2 - 1))
+
+    @staticmethod
+    def no_moves_left(board):
+        """
+        Check if there are any possible movements a player object can do
+        :return:
+        """
+        for y in range(len(board)):  # don't need to check bottom row
+            for x in range(len(board[0])):
+                # can player1 move right?
+                if (x + 1 < len(board[0]) and
+                        board[y][x] == Position.PLAYER1 and
+                        board[y][x + 1] == Position.EMPTY):
+                    return False
+
+                # can player2 move left?
+                if (x - 1 >= 0 and
+                        board[y][x] == Position.PLAYER2 and
+                        board[y][x - 1] == Position.EMPTY):
+                    return False
+        return True
+
+    @staticmethod
+    def _is_player(p):
+        """
+        Check if the supplied position is a player object.
+        :param p:
+        :return:
+        """
+        return isinstance(p, Position) and (p == Position.PLAYER1 or p == Position.PLAYER2)
