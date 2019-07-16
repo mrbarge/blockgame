@@ -102,21 +102,36 @@ class Board(object):
         """
         Let all players fall to a resting point if they're currently floating
         """
-        for y in range(self.height):  # don't need to check bottom row
-            for x in range(self.width):
-                if (Board._is_player(self._board[y][x]) and
-                        Board.can_move_down(self._board, x, y)):
-                    self._board[y + 1][x] = self._board[y][x]
-                    self._board[y][x] = Position.EMPTY
+        # Keep on applying gravity until no more players move
+        unit_moved = True
+        while unit_moved:
+            unit_moved = False
+            for y in range(self.height):  # don't need to check bottom row
+                for x in range(self.width):
+                    if (Board._is_player(self._board[y][x]) and
+                            Board.can_move_down(self._board, x, y)):
+                        self._board[y + 1][x] = self._board[y][x]
+                        self._board[y][x] = Position.EMPTY
+                        unit_moved = True
 
     def _move_player(self, player):
+        """
+        A dumb version of move player. All of a player's units move 1 square
+        in each turn (if they can).
+        :param player:
+        :return:
+        """
         if not isinstance(player, Position):
             raise Exception("Invalid input type for player")
 
-        while not Board.no_moves_left(self, player):
+        while not Board.no_moves_left(self._board, player):
             for y in range(self.height):
                 for x in range(self.width):
-                    if player == Position.PLAYER1 and Board.can_move_right(self._board, x, y):
+
+                    if not self._is_player(self._board[y][x]):
+                        continue
+
+                    elif player == Position.PLAYER1 and Board.can_move_right(self._board, x, y):
                         self._board[y][x] = Position.EMPTY
                         # is this a scoring move?
                         if x + 2 == self.width:
@@ -126,7 +141,7 @@ class Board(object):
                             # no, move the player along
                             self._board[y][x + 1] = Position.PLAYER1
 
-                    if player == Position.PLAYER2 and Board.can_move_left(self._board, x, y):
+                    elif player == Position.PLAYER2 and Board.can_move_left(self._board, x, y):
                         self._board[y][x] = Position.EMPTY
                         # is this a scoring move?
                         if x - 1 == 0:
@@ -135,6 +150,74 @@ class Board(object):
                         else:
                             # no, move the player along
                             self._board[y][x - 1] = Position.PLAYER2
+
+                    # apply gravity before evaluating the next position
+                    self._apply_gravity()
+
+    def _move_player_new(self, starting_column, player):
+        """
+        A better version of move player.
+        Pick a starting column, and move any player pieces found to
+        their eventual final destination before considering moving
+        any other pieces.
+        :param starting_column: column to start at (and move backwards from)
+        :param player:
+        :return:
+        """
+        if not isinstance(player, Position):
+            raise Exception("Invalid input type for player")
+
+        if player == Position.PLAYER1:
+            for x in reversed(range(starting_column + 1)):
+                for y in range(self.height):
+                    if self._board[y][x] != Position.PLAYER1:
+                        continue
+
+                    if Board.can_move_right(self._board, x, y):
+                        self._move_piece(x, y, move_right=True)
+
+                    self._apply_gravity()
+
+        else:
+            for x in range(starting_column, self.width):
+                for y in range(self.height):
+                    if self._board[y][x] != Position.PLAYER2:
+                        continue
+
+                    if Board.can_move_left(self._board, x, y):
+                        self._move_piece(x, y, move_right=False)
+
+                    self._apply_gravity()
+
+    def _move_piece(self, x, y, move_right=True):
+        """
+        Move a piece until it can't move anymore
+        :param x: starting x pos
+        :param y: starting y pos
+        :return: True if the piece reaches the end, counts as point
+        """
+
+        finished_moving = False
+        player = self._board[y][x]
+        while not finished_moving:
+            if self.can_move_right():
+                self._board[y][x] = Position.EMPTY
+                if Board.scoring_move():
+                    return True
+                else:
+                    if move_right:
+                        self._board[y][x + 1] = player
+                    else:
+                        self._board[y][x - 1] = player
+
+            elif self.can_move_down():
+                self._board[y][x] = Position.EMPTY
+                self._board[y + 1][x] = player
+
+            else:
+                finished_moving = True
+
+        return False
 
     def print(self):
         """
@@ -157,11 +240,20 @@ class Board(object):
 
         for y in range(len(board)):  # don't need to check bottom row
             for x in range(len(board[0])):
-                if player == Position.PLAYER1 and Board._is_player(board[y][x]) and Board.can_move_right(board, x, y):
+                if (player == Position.PLAYER1 and
+                        Board._is_player(board[y][x]) and
+                        (Board.can_move_right(board, x, y) or Board.can_move_down(board, x, y))
+                ):
                     return False
-                if player == Position.PLAYER2 and Board._is_player(board[y][x]) and Board.can_move_left(board, x, y):
+                if (player == Position.PLAYER2 and
+                        Board._is_player(board[y][x]) and
+                        (Board.can_move_left(board, x, y) or Board.can_move_down(board, x, y))
+                ):
                     return False
         return True
+
+    def score(self):
+        return (self._player1_score, self._player2_score)
 
     @staticmethod
     def can_move_left(board, x, y):
@@ -175,8 +267,9 @@ class Board(object):
     def can_move_down(board, x, y):
         return (y + 1 < len(board) and board[y + 1][x] == Position.EMPTY)
 
-    def score(self):
-        return (self._player1_score, self._player2_score)
+    @staticmethod
+    def scoring_move(board, x):
+        return (x < 0 or x >= len(board[0]))
 
     @staticmethod
     def _is_player(p):
