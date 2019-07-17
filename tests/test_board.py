@@ -4,6 +4,17 @@ from blockgame.position import Position
 
 
 @pytest.fixture
+def sample_board_small_score():
+    b = Board(3, 5, 3)
+    b._board = [[Position.PLAYER1, Position.EMPTY, Position.EMPTY],
+                [Position.FILLED, Position.FILLED, Position.FILLED],
+                [Position.PLAYER1, Position.EMPTY, Position.EMPTY],
+                [Position.FILLED, Position.EMPTY, Position.EMPTY],
+                [Position.FILLED, Position.FILLED, Position.FILLED]]
+    return b
+
+
+@pytest.fixture
 def sample_board_medium_move():
     b = Board(5, 5, 3)
     b._board = [[Position.PLAYER1, Position.EMPTY, Position.EMPTY, Position.PLAYER2, Position.EMPTY],
@@ -12,6 +23,7 @@ def sample_board_medium_move():
                 [Position.FILLED, Position.PLAYER1, Position.EMPTY, Position.PLAYER2, Position.FILLED],
                 [Position.EMPTY, Position.PLAYER1, Position.FILLED, Position.FILLED, Position.FILLED]]
     return b
+
 
 @pytest.fixture
 def sample_board_medium():
@@ -107,35 +119,38 @@ def test_apply_gravity():
          Position.PLAYER1, Position.PLAYER2, Position.FILLED]]
 
 
-def test_no_moves_left():
-    player1 = Position.PLAYER1
-    player2 = Position.PLAYER2
-    board = [[Position.PLAYER1, Position.FILLED, Position.FILLED, Position.FILLED]]
-    assert Board.no_moves_left(board, player1) == True
-    assert Board.no_moves_left(board, player2) == True
-
-    board = [[Position.FILLED, Position.EMPTY, Position.FILLED, Position.PLAYER1]]
-    assert Board.no_moves_left(board, player1) == True
-    assert Board.no_moves_left(board, player2) == True
-
-    board = [[Position.PLAYER1, Position.EMPTY, Position.FILLED, Position.PLAYER2]]
-    assert Board.no_moves_left(board, player1) == False
-    assert Board.no_moves_left(board, player2) == True
-
-    board = [[Position.PLAYER1, Position.PLAYER2, Position.FILLED, Position.FILLED]]
-    assert Board.no_moves_left(board, player1) == True
-    assert Board.no_moves_left(board, player2) == True
-
-    board = [[Position.EMPTY, Position.PLAYER2, Position.PLAYER1, Position.FILLED]]
-    assert Board.no_moves_left(board, player1) == True
-    assert Board.no_moves_left(board, player2) == False
-
-    board = [[Position.PLAYER2, Position.FILLED, Position.FILLED, Position.PLAYER1]]
-    assert Board.no_moves_left(board, player1) == True
-    assert Board.no_moves_left(board, player2) == True
+@pytest.mark.usefixtures("sample_board_medium_move")
+def test_move_player1(sample_board_medium_move):
+    sample_board_medium_move._move_player(2, Position.PLAYER1)
+    assert sample_board_medium_move._board == [
+        [Position.EMPTY, Position.EMPTY, Position.EMPTY, Position.PLAYER2, Position.EMPTY],
+        [Position.FILLED, Position.FILLED, Position.EMPTY, Position.FILLED, Position.EMPTY],
+        [Position.EMPTY, Position.EMPTY, Position.PLAYER1, Position.FILLED, Position.PLAYER2],
+        [Position.FILLED, Position.PLAYER1, Position.PLAYER1, Position.PLAYER2, Position.FILLED],
+        [Position.EMPTY, Position.PLAYER1, Position.FILLED, Position.FILLED, Position.FILLED]
+    ]
 
 
-@pytest.mark.usefixtures("sample_board_medium")
-def test_move_player(sample_board_medium):
-    sample_board_medium._move_player(Position.PLAYER1)
-    sample_board_medium.print()
+@pytest.mark.usefixtures("sample_board_medium_move")
+def test_move_player2(sample_board_medium_move):
+    sample_board_medium_move._move_player(2, Position.PLAYER2)
+    assert sample_board_medium_move._board == [
+        [Position.PLAYER1, Position.EMPTY, Position.EMPTY, Position.EMPTY, Position.EMPTY],
+        [Position.FILLED, Position.FILLED, Position.EMPTY, Position.FILLED, Position.EMPTY],
+        [Position.PLAYER1, Position.PLAYER2, Position.EMPTY, Position.FILLED, Position.PLAYER2],
+        [Position.FILLED, Position.PLAYER1, Position.PLAYER2, Position.EMPTY, Position.FILLED],
+        [Position.EMPTY, Position.PLAYER1, Position.FILLED, Position.FILLED, Position.FILLED]
+    ]
+
+
+@pytest.mark.usefixtures("sample_board_small_score")
+def test_move_player1_score(sample_board_small_score):
+    sample_board_small_score._move_player(2, Position.PLAYER1)
+    assert sample_board_small_score._board == [
+        [Position.EMPTY, Position.EMPTY, Position.EMPTY],
+        [Position.FILLED, Position.FILLED, Position.FILLED],
+        [Position.EMPTY, Position.EMPTY, Position.EMPTY],
+        [Position.FILLED, Position.EMPTY, Position.EMPTY],
+        [Position.FILLED, Position.FILLED, Position.FILLED]
+    ]
+    assert sample_board_small_score.score() == (2, 0)
