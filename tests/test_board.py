@@ -145,7 +145,7 @@ def test_move_player2(sample_board_medium_move):
 
 @pytest.mark.usefixtures("sample_board_small_score")
 def test_move_player1_score(sample_board_small_score):
-    sample_board_small_score._move_player(2, Position.PLAYER1)
+    p1, p2 = sample_board_small_score._move_player(2, Position.PLAYER1)
     assert sample_board_small_score._board == [
         [Position.EMPTY, Position.EMPTY, Position.EMPTY],
         [Position.FILLED, Position.FILLED, Position.FILLED],
@@ -153,4 +153,11 @@ def test_move_player1_score(sample_board_small_score):
         [Position.FILLED, Position.EMPTY, Position.EMPTY],
         [Position.FILLED, Position.FILLED, Position.FILLED]
     ]
-    assert sample_board_small_score.score() == (2, 0)
+    assert p1 == 2
+    assert p2 == 0
+
+
+@pytest.mark.usefixtures("sample_board_medium")
+def test_player_columns(sample_board_medium):
+    assert sample_board_medium.player_columns(Position.PLAYER1) == [0, 1]
+    assert sample_board_medium.player_columns(Position.PLAYER2) == [3, 4]

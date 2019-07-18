@@ -10,8 +10,6 @@ class Board(object):
             size_x += 1
         self.width = size_x
         self.height = size_y
-        self._player1_score = 0
-        self._player2_score = 0
         self._generate_board(self.width, self.height, units_per_side)
 
     def _generate_board(self, width, height, units_per_side):
@@ -124,6 +122,10 @@ class Board(object):
         :param player:
         :return:
         """
+
+        player1_points = 0
+        player2_points = 0
+
         if not isinstance(player, Position):
             raise Exception("Invalid input type for player")
 
@@ -137,7 +139,7 @@ class Board(object):
                     if Board.can_move_right(self._board, x, y):
                         is_score = self._move_piece(x, y, move_right=True)
                         if is_score:
-                            self._player1_score += 1
+                            player1_points += 1
                         self._apply_gravity()
 
         else:
@@ -150,8 +152,10 @@ class Board(object):
                     if Board.can_move_left(self._board, x, y):
                         is_score = self._move_piece(x, y, move_right=False)
                         if is_score:
-                            self._player2_score += 1
+                            player2_points += 1
                     self._apply_gravity()
+
+        return player1_points, player2_points
 
     def _move_piece(self, x, y, move_right=True):
         """
@@ -201,8 +205,14 @@ class Board(object):
             print('|'.join(xv))
             print('-' * (self.width * 2 - 1))
 
-    def score(self):
-        return self._player1_score, self._player2_score
+    def player_columns(self, p):
+        cols = []
+        for x in range(self.width):
+            for y in range(self.height):
+                if self._board[y][x] == p:
+                    cols.append(x)
+                    break
+        return cols
 
     @staticmethod
     def can_move_left(board, x, y):
