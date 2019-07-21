@@ -1,5 +1,5 @@
-from blockgame.board import Board
+from blockgame.match import Match
 
 if __name__ == '__main__':
-    b = Board(19, 13, 12)
-    b.print()
+    m = Match(width=19, height=13, units_per_side=12)
+    m.print()

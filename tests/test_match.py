@@ -29,8 +29,6 @@ def test_get_valid_columns(sample_board_medium_move):
     cols = m.get_valid_columns()
     assert cols == [3, 4]
 
-    print(cols)
-
 
 @pytest.mark.usefixtures("sample_board_medium_move")
 def test_get_valid_columns_max_turns_reached(sample_board_medium_move):

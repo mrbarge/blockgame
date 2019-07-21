@@ -1,7 +1,8 @@
+import random
 from blockgame.board import Board
 from blockgame.position import Position
+from blockgame.playerinput import PlayerInput
 from collections import deque
-import random
 
 
 class Match(object):
@@ -15,15 +16,6 @@ class Match(object):
         self._p1_columns = deque([], self.MAX_TURNS_FOR_COLUMN)
         self._p2_columns = deque([], self.MAX_TURNS_FOR_COLUMN)
         self._turn = Match._decide_first_turn()
-
-    @staticmethod
-    def _decide_first_turn():
-        """
-        Decide and return which player gets the first turn.
-        :param self:
-        :return:
-        """
-        return Position.PLAYER1 if random.randint(0, 1) == 0 else Position.PLAYER2
 
     def get_valid_columns(self):
         """
@@ -53,3 +45,42 @@ class Match(object):
         elif self._turn == Position.PLAYER2:
             return (len(self._p2_columns) == Match.MAX_TURNS_FOR_COLUMN and
                     all(e == self._p2_columns[0] for e in self._p2_columns))
+
+    def do_turn(self, column, direction):
+        """
+        Perform the current player's turn
+        :param column: column to move
+        :param direction: direction to move
+        :return:
+        """
+        if not isinstance(direction, PlayerInput):
+            raise Exception("Invalid type of direction")
+        if column < 0 or column >= self._board.width:
+            raise Exception("Invalid column")
+
+        if direction == PlayerInput.UP:
+            self._board.player_move(column, direction, self._turn)
+        elif direction == PlayerInput.DOWN:
+            self._board.player_move(column, direction, self._turn)
+
+    @staticmethod
+    def _decide_first_turn():
+        """
+        Decide and return which player gets the first turn.
+        :param self:
+        :return:
+        """
+        return Position.PLAYER1 if random.randint(0, 1) == 0 else Position.PLAYER2
+
+    def print(self):
+        print(f'[ P1: {self._player1_score: <2} | P2: {self._player2_score: <2} | Turn: PLAYER {self._turn.value}]')
+        print(f'')
+        self._board.print()
+        col_state = [' ']*self._board.width
+        for valid_turn in self.get_valid_columns():
+            col_state[valid_turn] = '^'
+        xv = [f'{x: ^3}' for x in col_state]
+        print('|'.join(xv))
+
+
+

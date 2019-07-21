@@ -121,7 +121,7 @@ def test_apply_gravity():
 
 @pytest.mark.usefixtures("sample_board_medium_move")
 def test_move_player1(sample_board_medium_move):
-    sample_board_medium_move._move_player(2, Position.PLAYER1)
+    sample_board_medium_move._apply_player_move(2, Position.PLAYER1)
     assert sample_board_medium_move._board == [
         [Position.EMPTY, Position.EMPTY, Position.EMPTY, Position.PLAYER2, Position.EMPTY],
         [Position.FILLED, Position.FILLED, Position.EMPTY, Position.FILLED, Position.EMPTY],
@@ -133,7 +133,7 @@ def test_move_player1(sample_board_medium_move):
 
 @pytest.mark.usefixtures("sample_board_medium_move")
 def test_move_player2(sample_board_medium_move):
-    sample_board_medium_move._move_player(2, Position.PLAYER2)
+    sample_board_medium_move._apply_player_move(2, Position.PLAYER2)
     assert sample_board_medium_move._board == [
         [Position.PLAYER1, Position.EMPTY, Position.EMPTY, Position.EMPTY, Position.EMPTY],
         [Position.FILLED, Position.FILLED, Position.EMPTY, Position.FILLED, Position.EMPTY],
@@ -145,7 +145,7 @@ def test_move_player2(sample_board_medium_move):
 
 @pytest.mark.usefixtures("sample_board_small_score")
 def test_move_player1_score(sample_board_small_score):
-    p1, p2 = sample_board_small_score._move_player(2, Position.PLAYER1)
+    p1, p2 = sample_board_small_score._apply_player_move(2, Position.PLAYER1)
     assert sample_board_small_score._board == [
         [Position.EMPTY, Position.EMPTY, Position.EMPTY],
         [Position.FILLED, Position.FILLED, Position.FILLED],
@@ -161,3 +161,15 @@ def test_move_player1_score(sample_board_small_score):
 def test_player_columns(sample_board_medium):
     assert sample_board_medium.player_columns(Position.PLAYER1) == [0, 1]
     assert sample_board_medium.player_columns(Position.PLAYER2) == [3, 4]
+
+
+def test_find_winners():
+    b = Board(3, 1, 1)
+    b._board = [[Position.PLAYER1, Position.EMPTY, Position.PLAYER2]]
+    assert b.find_winners() == []
+    b._board = [[Position.EMPTY, Position.PLAYER2, Position.EMPTY]]
+    assert b.find_winners() == [Position.PLAYER1]
+    b._board = [[Position.PLAYER1, Position.EMPTY, Position.EMPTY]]
+    assert b.find_winners() == [Position.PLAYER2]
+    b._board = [[Position.FILLED, Position.EMPTY, Position.EMPTY]]
+    assert b.find_winners() == [Position.PLAYER1, Position.PLAYER2]

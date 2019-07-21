@@ -8,4 +8,4 @@ class Position(Enum):
     PLAYER1 = '1'
     PLAYER2 = '2'
     EMPTY = ' '
-    FILLED = 'X'
+    FILLED = 'XXX'

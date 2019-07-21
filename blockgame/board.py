@@ -1,5 +1,6 @@
 import random
 from blockgame.position import Position
+from blockgame.playerinput import PlayerInput
 
 
 class Board(object):
@@ -11,6 +12,22 @@ class Board(object):
         self.width = size_x
         self.height = size_y
         self._generate_board(self.width, self.height, units_per_side)
+
+    def player_move(self, column, direction, player):
+        if column < 0 or column >= self.width:
+            raise Exception("Invalid column")
+
+        if direction == PlayerInput.UP:
+            self._shift_column_up(column)
+        elif direction == PlayerInput.DOWN:
+            self._shift_column_down(column)
+
+        if player == Position.PLAYER1:
+            self._apply_player_move(column, Position.PLAYER1)
+            self._apply_player_move(column, Position.PLAYER2)
+        else:
+            self._apply_player_move(column, Position.PLAYER2)
+            self._apply_player_move(column, Position.PLAYER1)
 
     def _generate_board(self, width, height, units_per_side):
         self._board = [[Position.EMPTY] * width for i in range(height)]
@@ -43,6 +60,7 @@ class Board(object):
                 self._board[0][x] = Position.EMPTY
 
         # let units settle into place
+        self._apply_gravity()
 
     def _find_free_pos(self, right_side=False):
         """
@@ -112,9 +130,8 @@ class Board(object):
                         self._board[y][x] = Position.EMPTY
                         unit_moved = True
 
-    def _move_player(self, starting_column, player):
+    def _apply_player_move(self, starting_column, player):
         """
-        A better version of move player.
         Pick a starting column, and move any player pieces found to
         their eventual final destination before considering moving
         any other pieces.
@@ -201,9 +218,9 @@ class Board(object):
         :return:
         """
         for y in range(self.height):
-            xv = [x.value for x in self._board[y]]
+            xv = [f'{x.value: ^3}' for x in self._board[y]]
             print('|'.join(xv))
-            print('-' * (self.width * 2 - 1))
+            print('-' * (self.width * 4 - 1))
 
     def player_columns(self, p):
         cols = []
@@ -213,6 +230,29 @@ class Board(object):
                     cols.append(x)
                     break
         return cols
+
+    def find_winners(self):
+        """
+        Return a list containing the game-winning players if the board is in such a state.
+        :param board:
+        :return: List of game-winning players, or empty if no player has yet won
+        """
+        p1_units = 0
+        p2_units = 0
+        winners = []
+
+        for y in range(self.height):
+            for x in range(self.width):
+                if self._board[y][x] == Position.PLAYER1:
+                    p1_units += 1
+                elif self._board[y][x] == Position.PLAYER2:
+                    p2_units += 1
+        if p1_units == 0:
+            winners.append(Position.PLAYER1)
+        if p2_units == 0:
+            winners.append(Position.PLAYER2)
+
+        return winners
 
     @staticmethod
     def can_move_left(board, x, y):
